@@ -16,19 +16,13 @@ function tokenizer(input) {
   while (current < input.length) {
     var char = input[current];
     if (char === '(') {
-      tokens.push({
-        type: 'paren',
-        value: '('
-      });
+      tokens.push({ type: 'paren', value: '(' });
       current++;
       continue;
     }
 
     if (char === ')') {
-      tokens.push({
-        type: 'paren',
-        value: ')'
-      });
+      tokens.push({ type: 'paren', value: ')' });
       current++;
       continue;
     }
@@ -46,32 +40,21 @@ function tokenizer(input) {
         value += char;
         char = input[++current];
       }
-
-      tokens.push({
-        type: 'number',
-        value: value
-      });
-
+      tokens.push({ type: 'number', value: value });
       continue;
     }
 
     var LETTERS = /[a-z]/i;
     if (LETTERS.test(char)) {
       var value = '';
-
       while (LETTERS.test(char)) {
         value += char;
         char = input[++current];
       }
-
-      tokens.push({
-        type: 'name',
-        value: value
-      });
-
+      tokens.push({ type: 'name', value: value });
       continue;
     }
-
+    
     throw new TypeError('I dont know what this character is: ' + char);
   }
 
@@ -96,23 +79,13 @@ function parser(tokens) {
 
     if (token.type === 'number') {
       current++;
-      return {
-        type: 'NumberLiteral',
-        value: token.value
-      };
+      return { type: 'NumberLiteral', value: token.value };
     }
 
     if (token.type === 'paren' && token.value === '(') {
       token = tokens[++current];
-
-      var node = {
-        type: 'CallExpression',
-        name: token.value,
-        params: []
-      };
-
+      var node = { type: 'CallExpression', name: token.value, params: [] };
       token = tokens[++current];
-
       while (
         (token.type !== 'paren') ||
         (token.type === 'paren' && token.value !== ')')
@@ -120,7 +93,6 @@ function parser(tokens) {
         node.params.push(walk());
         token = tokens[current];
       }
-
       current++;
       return node;
     }
@@ -128,11 +100,7 @@ function parser(tokens) {
     throw new TypeError(token.type);
   }
 
-  var ast = {
-    type: 'Program',
-    body: []
-  };
-
+  var ast = { type: 'Program', body: [] };
   while (current < tokens.length) {
     ast.body.push(walk());
   }
@@ -172,11 +140,9 @@ function traverser(ast, visitor) {
 
   function traverseNode(node, parent) {
     var method = visitor[node.type];
-    
     if (method) {
       method(node, parent);
     }
-
     switch (node.type) {
       case 'Program':
         traverseArray(node.body, node);
@@ -239,39 +205,25 @@ function traverser(ast, visitor) {
  */
 
 function transformer(ast) {
-
-  var newAst = {
-    type: 'Program',
-    body: []
-  };
-
+  var newAst = { type: 'Program', body: [] };
   ast._context = newAst.body;
 
   traverser(ast, {
     NumberLiteral: function(node, parent) {
-      parent._context.push({
-        type: 'NumberLiteral',
-        value: node.value
-      });
+      parent._context.push({ type: 'NumberLiteral', value: node.value });
     },
     
     CallExpression: function(node, parent) {
       var expression = {
         type: 'CallExpression',
-        callee: {
-          type: 'Identifier',
-          name: node.name
-        },
+        callee: { type: 'Identifier', name: node.name },
         arguments: []
       };
 
       node._context = expression.arguments;
 
       if (parent.type !== 'CallExpression') {
-        expression = {
-          type: 'ExpressionStatement',
-          expression: expression
-        };
+        expression = { type: 'ExpressionStatement', expression: expression };
       }
       parent._context.push(expression);
     }
